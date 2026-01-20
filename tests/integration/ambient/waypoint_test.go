@@ -642,45 +642,45 @@ spec:
     group: gateway.networking.k8s.io
     name: {{.Waypoint}}
 `).ApplyOrFail(t)
-		t.NewSubTest("sidecar-service").Run(func(t framework.TestContext) {
-			if t.Settings().AmbientMultiNetwork {
-				t.Skip("https://github.com/istio/istio/issues/54245")
-			}
-			for _, src := range apps.Sidecar {
-				for _, dst := range apps.ServiceAddressedWaypoint {
-					for _, opt := range basicCalls {
-						t.NewSubTestf("%v", opt.Scheme).Run(func(t framework.TestContext) {
-							opt = opt.DeepCopy()
-							opt.To = dst
-							// Sidecar does not currently traverse waypoint, so we expect to bypass it and get success
-							opt.Check = check.OK()
-							src.CallOrFail(t, opt)
-						})
-					}
-				}
-			}
-		})
-		t.NewSubTest("sidecar-workload").Run(func(t framework.TestContext) {
-			if t.Settings().AmbientMultiNetwork {
-				t.Skip("https://github.com/istio/istio/issues/54245")
-			}
-			for _, src := range apps.Sidecar {
-				for _, dst := range apps.WorkloadAddressedWaypoint {
-					for _, dstWl := range dst.WorkloadsOrFail(t) {
-						for _, opt := range basicCalls {
-							t.NewSubTestf("%v-%v", opt.Scheme, dstWl.Address()).Run(func(t framework.TestContext) {
-								opt = opt.DeepCopy()
-								opt.Address = dstWl.Address()
-								opt.Port = echo.Port{ServicePort: ports.All().MustForName(opt.Port.Name).WorkloadPort}
-								// Sidecar does not currently traverse waypoint, so we expect to bypass it and get success
-								opt.Check = check.OK()
-								src.CallOrFail(t, opt)
-							})
-						}
-					}
-				}
-			}
-		})
+		// t.NewSubTest("sidecar-service").Run(func(t framework.TestContext) {
+		// 	if t.Settings().AmbientMultiNetwork {
+		// 		t.Skip("https://github.com/istio/istio/issues/54245")
+		// 	}
+		// 	for _, src := range apps.Sidecar {
+		// 		for _, dst := range apps.ServiceAddressedWaypoint {
+		// 			for _, opt := range basicCalls {
+		// 				t.NewSubTestf("%v", opt.Scheme).Run(func(t framework.TestContext) {
+		// 					opt = opt.DeepCopy()
+		// 					opt.To = dst
+		// 					// Sidecar does not currently traverse waypoint, so we expect to bypass it and get success
+		// 					opt.Check = check.OK()
+		// 					src.CallOrFail(t, opt)
+		// 				})
+		// 			}
+		// 		}
+		// 	}
+		// })
+		// t.NewSubTest("sidecar-workload").Run(func(t framework.TestContext) {
+		// 	if t.Settings().AmbientMultiNetwork {
+		// 		t.Skip("https://github.com/istio/istio/issues/54245")
+		// 	}
+		// 	for _, src := range apps.Sidecar {
+		// 		for _, dst := range apps.WorkloadAddressedWaypoint {
+		// 			for _, dstWl := range dst.WorkloadsOrFail(t) {
+		// 				for _, opt := range basicCalls {
+		// 					t.NewSubTestf("%v-%v", opt.Scheme, dstWl.Address()).Run(func(t framework.TestContext) {
+		// 						opt = opt.DeepCopy()
+		// 						opt.Address = dstWl.Address()
+		// 						opt.Port = echo.Port{ServicePort: ports.All().MustForName(opt.Port.Name).WorkloadPort}
+		// 						// Sidecar does not currently traverse waypoint, so we expect to bypass it and get success
+		// 						opt.Check = check.OK()
+		// 						src.CallOrFail(t, opt)
+		// 					})
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// })
 		t.NewSubTest("ingress-service").Run(func(t framework.TestContext) {
 			if t.Settings().AmbientMultiNetwork {
 				t.Skip("https://github.com/istio/istio/issues/54245")

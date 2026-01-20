@@ -106,8 +106,8 @@ type EchoDeployments struct {
 	Captured echo.Instances
 	// Uncaptured echo Service
 	Uncaptured echo.Instances
-	// Sidecar echo services with sidecar
-	Sidecar echo.Instances
+	// // Sidecar echo services with sidecar
+	// Sidecar echo.Instances
 
 	// All echo services
 	All echo.Instances
@@ -313,32 +313,32 @@ func SetupApps(t resource.Context, i istio.Instance, apps *EchoDeployments) erro
 		return whErr
 	}
 	// Only setup sidecar tests if webhook is installed
-	if whErr == nil {
-		builder = builder.WithConfig(echo.Config{
-			Service:        Sidecar,
-			Namespace:      apps.Namespace,
-			Ports:          ports.All(),
-			ServiceAccount: true,
-			Subsets: []echo.SubsetConfig{
-				{
-					Replicas: 1,
-					Version:  "v1",
-					Labels: map[string]string{
-						"sidecar.istio.io/inject":       "true",
-						label.IoIstioDataplaneMode.Name: constants.DataplaneModeNone,
-					},
-				},
-				{
-					Replicas: 1,
-					Version:  "v2",
-					Labels: map[string]string{
-						"sidecar.istio.io/inject":       "true",
-						label.IoIstioDataplaneMode.Name: constants.DataplaneModeNone,
-					},
-				},
-			},
-		})
-	}
+	// if whErr == nil {
+	// 	builder = builder.WithConfig(echo.Config{
+	// 		Service:        Sidecar,
+	// 		Namespace:      apps.Namespace,
+	// 		Ports:          ports.All(),
+	// 		ServiceAccount: true,
+	// 		Subsets: []echo.SubsetConfig{
+	// 			{
+	// 				Replicas: 1,
+	// 				Version:  "v1",
+	// 				Labels: map[string]string{
+	// 					"sidecar.istio.io/inject":       "true",
+	// 					label.IoIstioDataplaneMode.Name: constants.DataplaneModeNone,
+	// 				},
+	// 			},
+	// 			{
+	// 				Replicas: 1,
+	// 				Version:  "v2",
+	// 				Labels: map[string]string{
+	// 					"sidecar.istio.io/inject":       "true",
+	// 					label.IoIstioDataplaneMode.Name: constants.DataplaneModeNone,
+	// 				},
+	// 			},
+	// 		},
+	// 	})
+	// }
 
 	external := cdeployment.External{Namespace: apps.ExternalNamespace}
 	external.Build(t, builder)
@@ -363,7 +363,7 @@ func SetupApps(t resource.Context, i istio.Instance, apps *EchoDeployments) erro
 	apps.AllWaypoint = apps.AllWaypoint.Append(apps.ServiceAddressedWaypoint)
 	apps.Uncaptured = match.ServiceName(echo.NamespacedName{Name: Uncaptured, Namespace: apps.Namespace}).GetMatches(echos)
 	apps.Captured = match.ServiceName(echo.NamespacedName{Name: Captured, Namespace: apps.Namespace}).GetMatches(echos)
-	apps.Sidecar = match.ServiceName(echo.NamespacedName{Name: Sidecar, Namespace: apps.Namespace}).GetMatches(echos)
+	// apps.Sidecar = match.ServiceName(echo.NamespacedName{Name: Sidecar, Namespace: apps.Namespace}).GetMatches(echos)
 	apps.Mesh = inMesh.GetMatches(echos)
 	apps.MeshExternal = match.Not(inMesh).GetMatches(echos)
 

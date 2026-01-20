@@ -183,10 +183,10 @@ function patch_config() {
 
     # FIPS cluster workaround
     # TODO: Remove this once tls12 is working in ztunnel or COMPLIANCE policy in istiod allowing FIPS140-3
-    if oc get machineconfigs -o yaml | grep -q "fips: true"; then
-      # yq eval '.spec.values.pilot.env.COMPLIANCE_POLICY = ""' -i "$WORKDIR/$SAIL_IOP_FILE"
-      echo "Configured FIPS workaround for Istio for ambient mode."
-    fi
+    # if oc get machineconfigs -o yaml | grep -q "fips: true"; then
+    yq eval '.spec.values.pilot.env.COMPLIANCE_POLICY = ""' -i "$WORKDIR/$SAIL_IOP_FILE"
+    echo "Configured FIPS workaround for Istio for ambient mode."
+    # fi
 
     echo "Configured Ambient mode for Istio."
   fi

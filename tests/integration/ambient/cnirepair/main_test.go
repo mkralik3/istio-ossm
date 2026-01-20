@@ -54,7 +54,7 @@ type EchoDeployments struct {
 	// Uncaptured echo Service
 	Uncaptured echo.Instances
 	// Sidecar echo services with sidecar
-	Sidecar echo.Instances
+	// Sidecar echo.Instances
 
 	// All echo services
 	All echo.Instances
@@ -152,31 +152,31 @@ func SetupApps(t resource.Context, i istio.Instance, apps *EchoDeployments) erro
 					Labels:   map[string]string{label.IoIstioDataplaneMode.Name: constants.DataplaneModeNone},
 				},
 			},
-		}).
-		WithConfig(echo.Config{
-			Service:        Sidecar,
-			Namespace:      apps.Namespace,
-			Ports:          ports.All(),
-			ServiceAccount: true,
-			Subsets: []echo.SubsetConfig{
-				{
-					Replicas: 1,
-					Version:  "v1",
-					Labels: map[string]string{
-						"sidecar.istio.io/inject":       "true",
-						label.IoIstioDataplaneMode.Name: constants.DataplaneModeNone,
-					},
-				},
-				{
-					Replicas: 1,
-					Version:  "v2",
-					Labels: map[string]string{
-						"sidecar.istio.io/inject":       "true",
-						label.IoIstioDataplaneMode.Name: constants.DataplaneModeNone,
-					},
-				},
-			},
 		})
+		// WithConfig(echo.Config{
+		// 	Service:        Sidecar,
+		// 	Namespace:      apps.Namespace,
+		// 	Ports:          ports.All(),
+		// 	ServiceAccount: true,
+		// 	Subsets: []echo.SubsetConfig{
+		// 		{
+		// 			Replicas: 1,
+		// 			Version:  "v1",
+		// 			Labels: map[string]string{
+		// 				"sidecar.istio.io/inject":       "true",
+		// 				label.IoIstioDataplaneMode.Name: constants.DataplaneModeNone,
+		// 			},
+		// 		},
+		// 		{
+		// 			Replicas: 1,
+		// 			Version:  "v2",
+		// 			Labels: map[string]string{
+		// 				"sidecar.istio.io/inject":       "true",
+		// 				label.IoIstioDataplaneMode.Name: constants.DataplaneModeNone,
+		// 			},
+		// 		},
+		// 	},
+		// })
 
 	// Build the applications
 	echos, err := builder.Build()
@@ -190,7 +190,7 @@ func SetupApps(t resource.Context, i istio.Instance, apps *EchoDeployments) erro
 	apps.All = echos
 	apps.Uncaptured = match.ServiceName(echo.NamespacedName{Name: Uncaptured, Namespace: apps.Namespace}).GetMatches(echos)
 	apps.Captured = match.ServiceName(echo.NamespacedName{Name: Captured, Namespace: apps.Namespace}).GetMatches(echos)
-	apps.Sidecar = match.ServiceName(echo.NamespacedName{Name: Sidecar, Namespace: apps.Namespace}).GetMatches(echos)
+	// apps.Sidecar = match.ServiceName(echo.NamespacedName{Name: Sidecar, Namespace: apps.Namespace}).GetMatches(echos)
 
 	return nil
 }

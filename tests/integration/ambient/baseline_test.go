@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/netip"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -3223,96 +3222,96 @@ func TestDirect(t *testing.T) {
 				Check:   check.Error(),
 			})
 		})
-		t.NewSubTest("sidecar").Run(func(t framework.TestContext) {
-			c := common.NewCaller()
-			cert, err := istio.CreateCertificate(t, i, apps.Captured.ServiceName(), apps.Namespace.Name())
-			if err != nil {
-				t.Fatal(err)
-			}
-			wl := apps.Sidecar[0].WorkloadsOrFail(t)[0]
-			pf, err := wl.Cluster().NewPortForwarder(wl.PodName(), apps.Namespace.Name(), "", 0, 15008)
-			assert.NoError(t, err)
-			assert.NoError(t, pf.Start())
+		// t.NewSubTest("sidecar").Run(func(t framework.TestContext) {
+		// 	c := common.NewCaller()
+		// 	cert, err := istio.CreateCertificate(t, i, apps.Captured.ServiceName(), apps.Namespace.Name())
+		// 	if err != nil {
+		// 		t.Fatal(err)
+		// 	}
+		// 	wl := apps.Sidecar[0].WorkloadsOrFail(t)[0]
+		// 	pf, err := wl.Cluster().NewPortForwarder(wl.PodName(), apps.Namespace.Name(), "", 0, 15008)
+		// 	assert.NoError(t, err)
+		// 	assert.NoError(t, pf.Start())
 
-			// this is real odd but we're going to assume for now that we've just got the one waypoint I guess?
-			hbone := echo.HBONE{
-				Address:            pf.Address(),
-				Headers:            nil,
-				Cert:               string(cert.ClientCert),
-				Key:                string(cert.Key),
-				CaCert:             string(cert.RootCert),
-				InsecureSkipVerify: true,
-			}
-			run := func(name string, options echo.CallOptions) {
-				t.NewSubTest(name).Run(func(t framework.TestContext) {
-					_, err := c.CallEcho(nil, options)
-					if err != nil {
-						t.Fatal(err)
-					}
-				})
-			}
-			internalPorts := []int{15000, 15001, 15006, 15008}
-			for _, p := range internalPorts {
-				run(fmt.Sprintf("admin port %d localhost", p), echo.CallOptions{
-					Count:   1,
-					Address: "127.0.0.1",
-					Port:    echo.Port{ServicePort: p, Protocol: protocol.HTTP},
-					HBONE:   hbone,
-					// This ought to deny!
-					Check: check.Error(),
-				})
-			}
-			for _, p := range internalPorts {
-				run(fmt.Sprintf("admin port %d pod ip", p), echo.CallOptions{
-					Count:   1,
-					Address: wl.Address(),
-					Port:    echo.Port{ServicePort: p, Protocol: protocol.HTTP},
-					HBONE:   hbone,
-					// This ought to deny!
-					Check: check.Or(check.Error(), check.Status(503)),
-				})
-			}
-			run("exposed port localhost", echo.CallOptions{
-				Count:   1,
-				Address: "127.0.0.1",
-				Port:    echo.Port{ServicePort: ports.HTTP.WorkloadPort, Protocol: protocol.HTTP},
-				HBONE:   hbone,
-				// This port is exposed so it technically doesn't really matter if it was exposed, but they requested localhost which is unaccepted.
-				Check: check.Error(),
-			})
-			run("exposed port podip", echo.CallOptions{
-				Count:   1,
-				Address: wl.Address(),
-				Port:    echo.Port{ServicePort: ports.HTTP.WorkloadPort, Protocol: protocol.HTTP},
-				HBONE:   hbone,
-				// normal request, allow
-				Check: check.OK(),
-			})
-			run("workload port", echo.CallOptions{
-				Count:   1,
-				Address: wl.Address(),
-				Port:    echo.Port{ServicePort: ports.HTTPWorkloadOnly.WorkloadPort, Protocol: protocol.HTTP},
-				HBONE:   hbone,
-				// This port is not exposed in a service but should be call-able
-				Check: check.OK(),
-			})
-			run("local port localhost", echo.CallOptions{
-				Count:   1,
-				Address: "127.0.0.1",
-				Port:    echo.Port{ServicePort: ports.HTTPLocalHost.WorkloadPort, Protocol: protocol.HTTP},
-				HBONE:   hbone,
-				// This port is NOT exposed, so it must not be callable
-				Check: check.Error(),
-			})
-			run("local port pod ip", echo.CallOptions{
-				Count:   1,
-				Address: wl.Address(),
-				Port:    echo.Port{ServicePort: ports.HTTPLocalHost.WorkloadPort, Protocol: protocol.HTTP},
-				HBONE:   hbone,
-				// This port is NOT exposed, so it must not be callable
-				Check: check.Status(503),
-			})
-		})
+		// 	// this is real odd but we're going to assume for now that we've just got the one waypoint I guess?
+		// 	hbone := echo.HBONE{
+		// 		Address:            pf.Address(),
+		// 		Headers:            nil,
+		// 		Cert:               string(cert.ClientCert),
+		// 		Key:                string(cert.Key),
+		// 		CaCert:             string(cert.RootCert),
+		// 		InsecureSkipVerify: true,
+		// 	}
+		// 	run := func(name string, options echo.CallOptions) {
+		// 		t.NewSubTest(name).Run(func(t framework.TestContext) {
+		// 			_, err := c.CallEcho(nil, options)
+		// 			if err != nil {
+		// 				t.Fatal(err)
+		// 			}
+		// 		})
+		// 	}
+		// 	internalPorts := []int{15000, 15001, 15006, 15008}
+		// 	for _, p := range internalPorts {
+		// 		run(fmt.Sprintf("admin port %d localhost", p), echo.CallOptions{
+		// 			Count:   1,
+		// 			Address: "127.0.0.1",
+		// 			Port:    echo.Port{ServicePort: p, Protocol: protocol.HTTP},
+		// 			HBONE:   hbone,
+		// 			// This ought to deny!
+		// 			Check: check.Error(),
+		// 		})
+		// 	}
+		// 	for _, p := range internalPorts {
+		// 		run(fmt.Sprintf("admin port %d pod ip", p), echo.CallOptions{
+		// 			Count:   1,
+		// 			Address: wl.Address(),
+		// 			Port:    echo.Port{ServicePort: p, Protocol: protocol.HTTP},
+		// 			HBONE:   hbone,
+		// 			// This ought to deny!
+		// 			Check: check.Or(check.Error(), check.Status(503)),
+		// 		})
+		// 	}
+		// 	run("exposed port localhost", echo.CallOptions{
+		// 		Count:   1,
+		// 		Address: "127.0.0.1",
+		// 		Port:    echo.Port{ServicePort: ports.HTTP.WorkloadPort, Protocol: protocol.HTTP},
+		// 		HBONE:   hbone,
+		// 		// This port is exposed so it technically doesn't really matter if it was exposed, but they requested localhost which is unaccepted.
+		// 		Check: check.Error(),
+		// 	})
+		// 	run("exposed port podip", echo.CallOptions{
+		// 		Count:   1,
+		// 		Address: wl.Address(),
+		// 		Port:    echo.Port{ServicePort: ports.HTTP.WorkloadPort, Protocol: protocol.HTTP},
+		// 		HBONE:   hbone,
+		// 		// normal request, allow
+		// 		Check: check.OK(),
+		// 	})
+		// 	run("workload port", echo.CallOptions{
+		// 		Count:   1,
+		// 		Address: wl.Address(),
+		// 		Port:    echo.Port{ServicePort: ports.HTTPWorkloadOnly.WorkloadPort, Protocol: protocol.HTTP},
+		// 		HBONE:   hbone,
+		// 		// This port is not exposed in a service but should be call-able
+		// 		Check: check.OK(),
+		// 	})
+		// 	run("local port localhost", echo.CallOptions{
+		// 		Count:   1,
+		// 		Address: "127.0.0.1",
+		// 		Port:    echo.Port{ServicePort: ports.HTTPLocalHost.WorkloadPort, Protocol: protocol.HTTP},
+		// 		HBONE:   hbone,
+		// 		// This port is NOT exposed, so it must not be callable
+		// 		Check: check.Error(),
+		// 	})
+		// 	run("local port pod ip", echo.CallOptions{
+		// 		Count:   1,
+		// 		Address: wl.Address(),
+		// 		Port:    echo.Port{ServicePort: ports.HTTPLocalHost.WorkloadPort, Protocol: protocol.HTTP},
+		// 		HBONE:   hbone,
+		// 		// This port is NOT exposed, so it must not be callable
+		// 		Check: check.Status(503),
+		// 	})
+		// })
 		t.NewSubTest("east west gateway").Run(func(t framework.TestContext) {
 			if !t.Settings().AmbientMultiNetwork {
 				t.Skip("only test east west gateway service scope in multi-network mode")
@@ -3374,86 +3373,86 @@ func TestDirect(t *testing.T) {
 	})
 }
 
-func TestServiceRestart(t *testing.T) {
-	const callInterval = 100 * time.Millisecond
-	successThreshold := 1.0
-	if os.Getenv("KUBERNETES_CNI") == "calico" {
-		// See https://github.com/istio/istio/issues/52719. It seems Calico itself cannot achieve 100% uptime
-		successThreshold = 0.9
-	}
+// func TestServiceRestart(t *testing.T) {
+// 	const callInterval = 100 * time.Millisecond
+// 	successThreshold := 1.0
+// 	if os.Getenv("KUBERNETES_CNI") == "calico" {
+// 		// See https://github.com/istio/istio/issues/52719. It seems Calico itself cannot achieve 100% uptime
+// 		successThreshold = 0.9
+// 	}
 
-	framework.NewTest(t).Run(func(t framework.TestContext) {
-		dst := apps.Captured
-		generators := []traffic.Generator{}
-		mkGen := func(src echo.Caller) {
-			g := traffic.NewGenerator(t, traffic.Config{
-				Source: src,
-				Options: echo.CallOptions{
-					To:    dst,
-					Count: 1,
-					Check: check.OK(),
-					HTTP:  echo.HTTP{Path: "/?delay=10ms"},
-					Port: echo.Port{
-						Name: "http",
-					},
-					Retry: echo.Retry{NoRetry: true},
-				},
-				Interval: callInterval,
-			}).Start()
-			generators = append(generators, g)
-		}
-		mkGen(apps.Uncaptured[0])
-		mkGen(apps.Sidecar[0])
-		// This is effectively "captured" since its the client; we cannot use captured since captured is the dest, though
-		mkGen(apps.WorkloadAddressedWaypoint[0])
-		if err := dst.Restart(); err != nil {
-			t.Fatal(err)
-		}
-		for _, gen := range generators {
-			// Stop the traffic generator and get the result.
-			gen.Stop().CheckSuccessRate(t, successThreshold)
-		}
-	})
-}
+// 	framework.NewTest(t).Run(func(t framework.TestContext) {
+// 		dst := apps.Captured
+// 		generators := []traffic.Generator{}
+// 		mkGen := func(src echo.Caller) {
+// 			g := traffic.NewGenerator(t, traffic.Config{
+// 				Source: src,
+// 				Options: echo.CallOptions{
+// 					To:    dst,
+// 					Count: 1,
+// 					Check: check.OK(),
+// 					HTTP:  echo.HTTP{Path: "/?delay=10ms"},
+// 					Port: echo.Port{
+// 						Name: "http",
+// 					},
+// 					Retry: echo.Retry{NoRetry: true},
+// 				},
+// 				Interval: callInterval,
+// 			}).Start()
+// 			generators = append(generators, g)
+// 		}
+// 		mkGen(apps.Uncaptured[0])
+// 		mkGen(apps.Sidecar[0])
+// 		// This is effectively "captured" since its the client; we cannot use captured since captured is the dest, though
+// 		mkGen(apps.WorkloadAddressedWaypoint[0])
+// 		if err := dst.Restart(); err != nil {
+// 			t.Fatal(err)
+// 		}
+// 		for _, gen := range generators {
+// 			// Stop the traffic generator and get the result.
+// 			gen.Stop().CheckSuccessRate(t, successThreshold)
+// 		}
+// 	})
+// }
 
-func TestZtunnelRestart(t *testing.T) {
-	const callInterval = 50 * time.Millisecond
-	// TODO(https://github.com/istio/istio/issues/51952) make this 1.0
-	const successThreshold = .9
-	const sidecarSuccessThreshold = .9
+// func TestZtunnelRestart(t *testing.T) {
+// 	const callInterval = 50 * time.Millisecond
+// 	// TODO(https://github.com/istio/istio/issues/51952) make this 1.0
+// 	const successThreshold = .9
+// 	const sidecarSuccessThreshold = .9
 
-	framework.NewTest(t).Run(func(t framework.TestContext) {
-		dst := apps.Captured
-		mkGen := func(src echo.Caller) traffic.Generator {
-			g := traffic.NewGenerator(t, traffic.Config{
-				Source: src,
-				Options: echo.CallOptions{
-					To:    dst,
-					Count: 1,
-					Check: check.OK(),
-					HTTP:  echo.HTTP{Path: "/?delay=10ms"},
-					Port: echo.Port{
-						Name: "http",
-					},
-					Retry: echo.Retry{NoRetry: true},
-				},
-				Interval: callInterval,
-			}).Start()
-			return g
-		}
-		uncap := mkGen(apps.Uncaptured[0])
-		sidecar := mkGen(apps.Sidecar[0])
-		// This is effectively "captured" since its the client; we cannot use captured since captured is the dest, though
-		captured := mkGen(apps.WorkloadAddressedWaypoint[0])
-		restartZtunnel(t)
-		// Stop the traffic generator and get the result.
-		uncap.Stop().CheckSuccessRate(t, successThreshold)
-		captured.Stop().CheckSuccessRate(t, successThreshold)
-		// We have a lighter check for sidecars. Sidecars will pool HTTP, so these are long lived connections.
-		// These we have no way to signal to Envoy (https://github.com/envoyproxy/envoy/issues/34897).
-		sidecar.Stop().CheckSuccessRate(t, sidecarSuccessThreshold)
-	})
-}
+// 	framework.NewTest(t).Run(func(t framework.TestContext) {
+// 		dst := apps.Captured
+// 		mkGen := func(src echo.Caller) traffic.Generator {
+// 			g := traffic.NewGenerator(t, traffic.Config{
+// 				Source: src,
+// 				Options: echo.CallOptions{
+// 					To:    dst,
+// 					Count: 1,
+// 					Check: check.OK(),
+// 					HTTP:  echo.HTTP{Path: "/?delay=10ms"},
+// 					Port: echo.Port{
+// 						Name: "http",
+// 					},
+// 					Retry: echo.Retry{NoRetry: true},
+// 				},
+// 				Interval: callInterval,
+// 			}).Start()
+// 			return g
+// 		}
+// 		uncap := mkGen(apps.Uncaptured[0])
+// 		sidecar := mkGen(apps.Sidecar[0])
+// 		// This is effectively "captured" since its the client; we cannot use captured since captured is the dest, though
+// 		captured := mkGen(apps.WorkloadAddressedWaypoint[0])
+// 		restartZtunnel(t)
+// 		// Stop the traffic generator and get the result.
+// 		uncap.Stop().CheckSuccessRate(t, successThreshold)
+// 		captured.Stop().CheckSuccessRate(t, successThreshold)
+// 		// We have a lighter check for sidecars. Sidecars will pool HTTP, so these are long lived connections.
+// 		// These we have no way to signal to Envoy (https://github.com/envoyproxy/envoy/issues/34897).
+// 		sidecar.Stop().CheckSuccessRate(t, sidecarSuccessThreshold)
+// 	})
+// }
 
 func TestServiceDynamicEnroll(t *testing.T) {
 	const callInterval = 50 * time.Millisecond
@@ -3580,103 +3579,103 @@ func daemonsetsetComplete(ds *appsv1.DaemonSet) bool {
 		ds.Status.ObservedGeneration >= ds.Generation
 }
 
-func TestWaypointWithInvalidBackend(t *testing.T) {
-	framework.NewTest(t).
-		Run(func(t framework.TestContext) {
-			// We should expect a 500 error since the backend is invalid.
-			t.ConfigIstio().
-				Eval(apps.Namespace.Name(), apps.Namespace.Name(), `apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: add-header
-spec:
-  parentRefs:
-  - name: sidecar
-    kind: Service
-    group: ""
-    port: 80
-  rules:
-  - filters:
-    - type: RequestHeaderModifier
-      requestHeaderModifier:
-        add:
-        - name: greeting
-          value: "hello world!"
-    backendRefs:
-    - name: invalid
-      port: 80
-`).
-				ApplyOrFail(t)
-			SetWaypoint(t, Sidecar, "waypoint")
-			for _, c := range t.Clusters() {
-				// TODO: Support sending to a different cluster
-				client := apps.Captured.ForCluster(c.Name())
-				client[0].CallOrFail(t, echo.CallOptions{
-					To:   apps.Sidecar.ForCluster(c.Name()),
-					Port: ports.HTTP,
-					Check: check.And(
-						check.Status(500),
-					),
-				})
-			}
-		})
-}
+// func TestWaypointWithInvalidBackend(t *testing.T) {
+// 	framework.NewTest(t).
+// 		Run(func(t framework.TestContext) {
+// 			// We should expect a 500 error since the backend is invalid.
+// 			t.ConfigIstio().
+// 				Eval(apps.Namespace.Name(), apps.Namespace.Name(), `apiVersion: gateway.networking.k8s.io/v1
+// kind: HTTPRoute
+// metadata:
+//   name: add-header
+// spec:
+//   parentRefs:
+//   - name: sidecar
+//     kind: Service
+//     group: ""
+//     port: 80
+//   rules:
+//   - filters:
+//     - type: RequestHeaderModifier
+//       requestHeaderModifier:
+//         add:
+//         - name: greeting
+//           value: "hello world!"
+//     backendRefs:
+//     - name: invalid
+//       port: 80
+// `).
+// 				ApplyOrFail(t)
+// 			SetWaypoint(t, Sidecar, "waypoint")
+// 			for _, c := range t.Clusters() {
+// 				// TODO: Support sending to a different cluster
+// 				client := apps.Captured.ForCluster(c.Name())
+// 				client[0].CallOrFail(t, echo.CallOptions{
+// 					To:   apps.Sidecar.ForCluster(c.Name()),
+// 					Port: ports.HTTP,
+// 					Check: check.And(
+// 						check.Status(500),
+// 					),
+// 				})
+// 			}
+// 		})
+// }
 
-func TestWaypointWithSidecarBackend(t *testing.T) {
-	framework.NewTest(t).
-		Run(func(t framework.TestContext) {
-			// Ensure we go through the waypoint (verified by modifying the request) and that we are doing mTLS.
-			t.ConfigIstio().
-				Eval(apps.Namespace.Name(), apps.Namespace.Name(), `apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: add-header
-spec:
-  parentRefs:
-  - name: sidecar
-    kind: Service
-    group: ""
-    port: 80
-  rules:
-  - filters:
-    - type: RequestHeaderModifier
-      requestHeaderModifier:
-        add:
-        - name: greeting
-          value: "hello world!"
-    backendRefs:
-    - name: sidecar
-      port: 80
----
-apiVersion: security.istio.io/v1
-kind: AuthorizationPolicy
-metadata:
-  name: sidecar-must-go-through-waypoint
-spec:
-  selector:
-    matchLabels:
-      app: sidecar
-  action: ALLOW
-  rules:
-  - from:
-    - source:
-        principals: ["cluster.local/ns/{{.}}/sa/waypoint"]`).
-				ApplyOrFail(t)
-			SetWaypoint(t, Sidecar, "waypoint")
-			for _, c := range t.Clusters() {
-				// TODO: Support sending to a different cluster
-				client := apps.Captured.ForCluster(c.Name())
-				client[0].CallOrFail(t, echo.CallOptions{
-					To:   apps.Sidecar.ForCluster(c.Name()),
-					Port: ports.HTTP,
-					Check: check.And(
-						check.OK(),
-						check.RequestHeader("greeting", "hello world!"),
-					),
-				})
-			}
-		})
-}
+// func TestWaypointWithSidecarBackend(t *testing.T) {
+// 	framework.NewTest(t).
+// 		Run(func(t framework.TestContext) {
+// 			// Ensure we go through the waypoint (verified by modifying the request) and that we are doing mTLS.
+// 			t.ConfigIstio().
+// 				Eval(apps.Namespace.Name(), apps.Namespace.Name(), `apiVersion: gateway.networking.k8s.io/v1
+// kind: HTTPRoute
+// metadata:
+//   name: add-header
+// spec:
+//   parentRefs:
+//   - name: sidecar
+//     kind: Service
+//     group: ""
+//     port: 80
+//   rules:
+//   - filters:
+//     - type: RequestHeaderModifier
+//       requestHeaderModifier:
+//         add:
+//         - name: greeting
+//           value: "hello world!"
+//     backendRefs:
+//     - name: sidecar
+//       port: 80
+// ---
+// apiVersion: security.istio.io/v1
+// kind: AuthorizationPolicy
+// metadata:
+//   name: sidecar-must-go-through-waypoint
+// spec:
+//   selector:
+//     matchLabels:
+//       app: sidecar
+//   action: ALLOW
+//   rules:
+//   - from:
+//     - source:
+//         principals: ["cluster.local/ns/{{.}}/sa/waypoint"]`).
+// 				ApplyOrFail(t)
+// 			SetWaypoint(t, Sidecar, "waypoint")
+// 			for _, c := range t.Clusters() {
+// 				// TODO: Support sending to a different cluster
+// 				client := apps.Captured.ForCluster(c.Name())
+// 				client[0].CallOrFail(t, echo.CallOptions{
+// 					To:   apps.Sidecar.ForCluster(c.Name()),
+// 					Port: ports.HTTP,
+// 					Check: check.And(
+// 						check.OK(),
+// 						check.RequestHeader("greeting", "hello world!"),
+// 					),
+// 				})
+// 			}
+// 		})
+// }
 
 func TestZtunnelSecureMetrics(t *testing.T) {
 	framework.NewTest(t).

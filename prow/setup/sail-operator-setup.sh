@@ -181,6 +181,13 @@ function patch_config() {
     # Add configurations for ServiceEntry/DNS resolution
     yq eval '.spec.values.meshConfig.defaultConfig.proxyMetadata.ISTIO_META_DNS_CAPTURE = "true"' -i "$WORKDIR/$SAIL_IOP_FILE"
 
+    # FIPS cluster workaround
+    # TODO: Remove this once tls12 is working in ztunnel or COMPLIANCE policy in istiod allowing FIPS140-3
+    if oc get machineconfigs -o yaml | grep -q "fips: true"; then
+      # yq eval '.spec.values.pilot.env.COMPLIANCE_POLICY = ""' -i "$WORKDIR/$SAIL_IOP_FILE"
+      echo "Configured FIPS workaround for Istio for ambient mode."
+    fi
+
     echo "Configured Ambient mode for Istio."
   fi
 

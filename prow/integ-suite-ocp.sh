@@ -15,8 +15,10 @@
 # limitations under the License.
 
 # This script is used to run the integration tests on OpenShift.
-# Usage: ./integ-suite-ocp.sh TEST_SUITE SKIP_TESTS, example: /prow/integ-suite-ocp.sh telemetry "TestClientTracing|TestServerTracing"
+# Usage: ./integ-suite-ocp.sh TEST_SUITE SKIP_TESTS SPECIFIC_TESTS, example: /prow/integ-suite-ocp.sh telemetry "TestClientTracing|TestServerTracing" "TestClientTracing|TestServerTracing"
 # TEST_SUITE: The test suite to run. Default is "pilot". Available options are "pilot", "security", "telemetry", "helm".
+# SKIP_TESTS: The tests to skip. Default is "".
+# SPECIFIC_TESTS: The specific tests ONLY to run. Default is "". e.g.: "TestTraffic|TestServices"
 # TODO: Use the same arguments as integ-suite.kind.sh uses
 
 WD=$(dirname "$0")
@@ -24,9 +26,10 @@ ROOT=$(dirname "$WD")
 WD=$(cd "$WD"; pwd)
 export NAMESPACE="${NAMESPACE:-"istio-system"}"
 export TAG="${TAG:-"istio-testing"}"
-SKIP_TESTS="${2:-""}"
 TEST_SUITE="${1:-"pilot"}"
+SKIP_TESTS="${2:-""}"
 SKIP_SUITE="${3:-""}"
+SPECIFIC_TESTS="${4:-""}"
 SKIP_SETUP="${SKIP_SETUP:-"false"}"
 INSTALL_METALLB="${INSTALL_METALLB:-"false"}"
 OPERATOR_NAMESPACE="${OPERATOR_NAMESPACE:-"sail-operator"}"
@@ -259,6 +262,11 @@ if [ "${CONTROL_PLANE_SOURCE}" == "sail" ]; then
     SAIL_SETUP_SCRIPT="${WD}/setup/sail-operator-setup.sh"
     base_cmd+=("--istio.test.kube.deploy=false")
     base_cmd+=("--istio.test.kube.controlPlaneInstaller=${SAIL_SETUP_SCRIPT}")
+fi
+
+# Append specific tests flag if SPECIFIC_TESTS is set, e.g.: "TestTraffic|TestServices"
+if [ -n "${SPECIFIC_TESTS}" ]; then
+    base_cmd+=("-run" "${SPECIFIC_TESTS}")
 fi
 
 # Append skip tests flag if SKIP_TESTS is set

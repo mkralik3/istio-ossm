@@ -223,6 +223,7 @@ base_cmd=(
   "--istio.test.ci"
   "--istio.test.pullpolicy=IfNotPresent"
   "--istio.test.work_dir=${ARTIFACTS_DIR}"
+  "--istio.test.skipTProxy=true"
   "--istio.test.skipVM=true"
   "--istio.test.istio.enableCNI=true"
   "--istio.test.hub=${TEST_HUB}"

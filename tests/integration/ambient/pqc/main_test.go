@@ -61,6 +61,9 @@ func TestMain(m *testing.M) {
 	framework.
 		NewSuite(m).
 		Label(testlabel.CustomSetup).
+		SkipIf("PQC is not working on FIPS cluster", func(t resource.Context) bool {
+			return t.Settings().Fips
+		}).
 		Setup(istio.Setup(&i, func(ctx resource.Context, cfg *istio.Config) {
 			ctx.Settings().Ambient = true
 			ctx.Settings().SkipVMs()
@@ -167,6 +170,9 @@ func setupAppsConfig(_ resource.Context) error {
 func TestIngress(t *testing.T) {
 	framework.NewTest(t).
 		Run(func(t framework.TestContext) {
+			if t.Settings().Fips {
+				t.Skip("Tests are running on FIPS enabled cluster where PQC tests are not possible")
+			}
 			credName := "ingress-pqc-credential"
 			host := "ingress-pqc.example.com"
 			gatewayName := "ingress-pqc-credential"
@@ -255,6 +261,9 @@ spec:
 func TestWaypoint(t *testing.T) {
 	framework.NewTest(t).
 		Run(func(t framework.TestContext) {
+			if t.Settings().Fips {
+				t.Skip("Tests are running on FIPS enabled cluster where PQC tests are not possible")
+			}
 			serviceEntryYaml := `
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry

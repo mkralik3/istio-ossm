@@ -53,6 +53,8 @@ AMBIENT="${AMBIENT:="false"}"
 TEST_HUB="${TEST_HUB:="image-registry.openshift-image-registry.svc:5000/${NAMESPACE}"}"
 DEPLOY_GATEWAY_API="false"
 IBM="${IBM:-"false"}"
+//tmp
+FIPS="${FIPS:-"true"}"
 
 # Important: SKIP_TEST_RUN is a workaround until downstream tests can be executed by using this script. 
 # To execute the tests in downstream, set SKIP_TEST_RUN to true
@@ -237,6 +239,10 @@ helm_values="global.platform=openshift"
 # IBM specific modifications
 if [ "${IBM}" == "true" ]; then
     base_cmd+=("--istio.test.skipTProxy=true")
+fi
+
+if [ "${FIPS}" == "true" ]; then
+    base_cmd+=("--istio.test.select=-nofips")
 fi
 
 # Gateway Conformance Test related modifications

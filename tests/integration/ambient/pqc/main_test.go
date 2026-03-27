@@ -61,6 +61,8 @@ func TestMain(m *testing.M) {
 	framework.
 		NewSuite(m).
 		Label(testlabel.CustomSetup).
+		// X25519MLKEM768 is not FIPS-compliant
+		Label(testlabel.NoFips).
 		Setup(istio.Setup(&i, func(ctx resource.Context, cfg *istio.Config) {
 			ctx.Settings().Ambient = true
 			ctx.Settings().SkipVMs()

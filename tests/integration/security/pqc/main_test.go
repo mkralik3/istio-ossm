@@ -56,6 +56,8 @@ func TestMain(m *testing.M) {
 	framework.
 		NewSuite(m).
 		Label(label.CustomSetup).
+		// X25519MLKEM768 is not FIPS-compliant
+		Label(label.NoFips).
 		Setup(istio.Setup(&i, func(ctx resource.Context, cfg *istio.Config) {
 			ctx.Settings().EchoImage = "quay.io/sail-dev/app:release-1.28"
 			cfg.ControlPlaneValues = `

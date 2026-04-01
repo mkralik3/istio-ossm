@@ -204,6 +204,8 @@ function patch_config() {
     ' -i "$WORKDIR/$SAIL_IOP_FILE"
     echo "Configured pilot.env for QUIC tests."
   fi
+  #tmp FIPS 140-3
+  yq eval '.spec.values.pilot.env.COMPLIANCE_POLICY=""' -i "$WORKDIR/$SAIL_IOP_FILE"
 }
 
 function patch_gateway_config() {
@@ -259,6 +261,8 @@ function patch_ztunnel_config() {
   if [[ "$WORKDIR" == *"ambient-pqc"* ]]; then
       yq -i '.spec.values.ztunnel.env.COMPLIANCE_POLICY="pqc"' "$TMP_ZTUNNEL"
   fi
+  #tmp FIPS 140-3
+  yq -i '.spec.values.ztunnel.env.COMPLIANCE_POLICY=""' "$TMP_ZTUNNEL"
 }
 
 # Install ingress and egress gateways

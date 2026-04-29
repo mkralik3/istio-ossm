@@ -140,6 +140,7 @@ function install_istio(){
 }
 
 function patch_config() {
+  yq eval '.spec.values.pilot.env.COMPLIANCE_POLICY="fips-140-3-redhat"' -i "$WORKDIR/$SAIL_IOP_FILE"
   # adds some control plane values that are mandatory and not available in iop.yaml
   if [[ "$WORKDIR" == *"telemetry-api"* ]]; then
     # The patch for the telemetry api tests is added because PR

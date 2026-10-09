@@ -127,11 +127,19 @@ type Suite interface {
 	Run()
 }
 
+// skipCondition is a single reason/predicate pair registered via SkipIf.
+type skipCondition struct {
+	reason string
+	fn     resource.ShouldSkipFn
+}
+
 // suiteImpl will actually run the test suite
 type suiteImpl struct {
-	testID      string
+	testID string
+	// skipMessage is the reason reported for the condition that caused the suite to be skipped.
+	// It is set by isSkipped once a matching condition is found.
 	skipMessage string
-	skipFn      resource.ShouldSkipFn
+	skipConds   []skipCondition
 	mRun        mRunFn
 	osExit      func(int)
 	labels      label.Set
@@ -201,17 +209,22 @@ func (s *suiteImpl) Label(labels ...label.Instance) Suite {
 	return s
 }
 
+// Skip unconditionally skips the suite, discarding any conditions previously registered via
+// SkipIf. It is also called from the Require* setup functions, which decide at setup time.
 func (s *suiteImpl) Skip(reason string) Suite {
 	s.skipMessage = reason
-	s.skipFn = func(ctx resource.Context) bool {
-		return true
-	}
+	s.skipConds = []skipCondition{{
+		reason: reason,
+		fn:     func(ctx resource.Context) bool { return true },
+	}}
 	return s
 }
 
+// SkipIf registers an additional skip condition. Conditions accumulate, so SkipIf may be
+// chained: the suite is skipped if any of them returns true, and the reason reported is that
+// of the first condition (in registration order) that matched.
 func (s *suiteImpl) SkipIf(reason string, fn resource.ShouldSkipFn) Suite {
-	s.skipMessage = reason
-	s.skipFn = fn
+	s.skipConds = append(s.skipConds, skipCondition{reason: reason, fn: fn})
 	return s
 }
 
@@ -387,8 +400,11 @@ func (s *suiteImpl) Run() {
 }
 
 func (s *suiteImpl) isSkipped(ctx SuiteContext) bool {
-	if s.skipFn != nil && s.skipFn(ctx) {
-		return true
+	for _, c := range s.skipConds {
+		if c.fn(ctx) {
+			s.skipMessage = c.reason
+			return true
+		}
 	}
 	return false
 }
